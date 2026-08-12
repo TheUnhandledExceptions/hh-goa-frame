@@ -16,6 +16,7 @@ function App() {
   const [imageSrc, setImageSrc] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [finalImage, setFinalImage] = useState(null);
   
   // Cropper states
@@ -149,6 +150,42 @@ function App() {
     generateResult();
   };
 
+  const handleShare = async () => {
+    try {
+      setIsSharing(true);
+      
+      const response = await fetch(finalImage);
+      const blob = await response.blob();
+      
+      const uploadRes = await fetch('/api/save-result', {
+        method: 'POST',
+        body: blob,
+        headers: {
+          'Content-Type': 'image/png'
+        }
+      });
+      
+      if (!uploadRes.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      const data = await uploadRes.json();
+      const uploadedUrl = data.url;
+      
+      const ourShareLink = `${window.location.origin}/api/share?imgUrl=${encodeURIComponent(uploadedUrl)}`;
+      const text = "Just built my HH Goa 2026 badge! #FrameInGoa";
+      
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(ourShareLink)}`;
+      window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+      
+    } catch (error) {
+      console.error("Share error:", error);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const handleCancelCrop = () => {
     // Reset everything to go back to upload UI
     setImageSrc(null);
@@ -204,17 +241,27 @@ function App() {
                 Download
               </a>
               
-              <a 
-                href="https://twitter.com/intent/tweet?text=Just%20built%20my%20HH%20Goa%202026%20badge!%20%23FrameInGoa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full min-h-[56px] py-3 px-6 rounded-2xl bg-[#000000] hover:bg-gray-900 border border-white/20 text-white font-bold shadow-lg transition-all duration-300 active:scale-95 flex items-center justify-center gap-2"
+              <button 
+                onClick={handleShare}
+                disabled={isSharing}
+                className={`w-full min-h-[56px] py-3 px-6 rounded-2xl border border-white/20 font-bold shadow-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                  isSharing 
+                    ? 'bg-gray-800 text-gray-400 cursor-not-allowed' 
+                    : 'bg-[#000000] hover:bg-gray-900 text-white active:scale-95'
+                }`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.008 5.964H5.078z" />
-                </svg>
-                Share to X
-              </a>
+                {isSharing ? (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.008 5.964H5.078z" />
+                  </svg>
+                )}
+                {isSharing ? 'Preparing...' : 'Share to X'}
+              </button>
 
               <button 
                 onClick={handleStartOver}
