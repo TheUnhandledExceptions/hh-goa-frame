@@ -1,6 +1,7 @@
 import { put } from '@vercel/blob';
-import redis from '../lib/redis.js';
+import { Redis } from 'ioredis';
 
+// CRITICAL: Disable Vercel's default body parser for raw image streams
 export const config = {
   api: {
     bodyParser: false,
@@ -8,28 +9,28 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {
-    // Put the raw request stream directly into Vercel Blob
-    const blob = await put('hh-goa-2026.png', req, {
+    // Pass the raw request stream directly to Vercel Blob
+    const blob = await put(`badge-${Date.now()}.png`, req, {
       access: 'public',
     });
 
-    // Increment generation stats in Redis
+    // Optimistically increment stats without blocking the response
     try {
-      await redis.incr('total_generations');
+      if (process.env.REDIS_URL) {
+        const redis = new Redis(process.env.REDIS_URL);
+        await redis.incr('total_generations');
+        redis.quit();
+      }
     } catch (redisError) {
-      console.error('Redis Increment Error:', redisError);
-      // We don't fail the upload just because stats tracking failed
+      console.error('Redis increment failed:', redisError);
     }
 
-    // Return the URL
     return res.status(200).json({ url: blob.url });
   } catch (error) {
-    console.error('Upload Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Blob upload error:', error);
+    return res.status(500).json({ error: 'Upload failed', details: error.message });
   }
 }
