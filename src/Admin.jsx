@@ -6,6 +6,29 @@ export default function Admin() {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pingCountdown, setPingCountdown] = useState(0);
+
+  // Keep-warm ping system
+  useEffect(() => {
+    if (!stats || !stats.isHackathonActive) {
+      setPingCountdown(0);
+      return;
+    }
+
+    setPingCountdown(300);
+    
+    const interval = setInterval(() => {
+      setPingCountdown(prev => {
+        if (prev <= 1) {
+          fetch('/api/ping').catch(console.error);
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [stats?.isHackathonActive]);
 
   // Check session storage on mount
   useEffect(() => {
@@ -189,7 +212,18 @@ export default function Admin() {
                   <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(249,22,129,0.5)] ${stats.isHackathonActive ? 'left-[34px] bg-hh-pink' : 'left-1 bg-white/40 shadow-none'}`}></div>
                 </button>
               </div>
-              <p className="text-xs text-white/60 mt-4">&gt; Immediate sync to global edge state</p>
+              <div className="mt-4 p-2 bg-black/60 rounded border border-white/5 font-mono text-[10px] md:text-xs">
+                {stats.isHackathonActive ? (
+                  <span className="text-hh-yellow flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-hh-yellow animate-pulse"></span>
+                    &gt; System Heartbeat Active: Next keep-warm ping in {pingCountdown}s...
+                  </span>
+                ) : (
+                  <span className="text-white/40">
+                    &gt; System Standby: Keep-warm disabled.
+                  </span>
+                )}
+              </div>
             </div>
 
           </div>
