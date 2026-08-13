@@ -61,6 +61,17 @@ function App() {
   // Hackathon Status
   const [isHackathonActive, setIsHackathonActive] = useState(true);
 
+  // Device detection: show Camera+Gallery on mobile, single Upload on desktop
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      const hasTouchScreen = navigator.maxTouchPoints > 0;
+      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      setIsMobile(hasTouchScreen && hasCoarsePointer);
+    };
+    checkMobile();
+  }, []);
+
   useEffect(() => {
     fetch('/api/status')
       .then(res => res.json())
@@ -496,40 +507,86 @@ function App() {
                 )}
               </div>
 
-              <input 
-                id="native-upload"
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
-                onChange={handleFileChange}
-                disabled={isProcessing || !isHackathonActive}
-              />
-
-              <label 
-                htmlFor="native-upload"
-                className={`w-full py-4 px-6 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer
-                  ${(isProcessing || !isHackathonActive) 
-                    ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5 pointer-events-none' 
-                    : 'bg-hh-pink hover:bg-hh-yellow hover:text-black text-white shadow-hh-pink/25 active:scale-95'
-                  }`}
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                Upload Photo
-              </label>
+              {isMobile ? (
+                /* MOBILE: Two separate inputs for Camera & Gallery */
+                <>
+                  <input 
+                    id="gallery-upload"
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleFileChange}
+                    disabled={isProcessing || !isHackathonActive}
+                  />
+                  <input 
+                    id="camera-upload"
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment"
+                    className="hidden" 
+                    onChange={handleFileChange}
+                    disabled={isProcessing || !isHackathonActive}
+                  />
+                  <div className="flex gap-3 w-full">
+                    <label 
+                      htmlFor="camera-upload"
+                      className={`flex-1 py-4 px-4 rounded-2xl font-bold text-base shadow-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer
+                        ${(isProcessing || !isHackathonActive) 
+                          ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5 pointer-events-none' 
+                          : 'bg-hh-pink hover:bg-hh-yellow hover:text-black text-white shadow-hh-pink/25 active:scale-95'
+                        }`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                      Camera
+                    </label>
+                    <label 
+                      htmlFor="gallery-upload"
+                      className={`flex-1 py-4 px-4 rounded-2xl font-bold text-base shadow-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer
+                        ${(isProcessing || !isHackathonActive) 
+                          ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5 pointer-events-none' 
+                          : 'border-2 border-hh-pink text-white hover:bg-hh-yellow hover:text-black hover:border-hh-yellow active:scale-95'
+                        }`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      Gallery
+                    </label>
+                  </div>
+                </>
+              ) : (
+                /* DESKTOP: Single upload button (no camera via file input on desktop) */
+                <>
+                  <input 
+                    id="desktop-upload"
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleFileChange}
+                    disabled={isProcessing || !isHackathonActive}
+                  />
+                  <label 
+                    htmlFor="desktop-upload"
+                    className={`w-full py-4 px-6 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer
+                      ${(isProcessing || !isHackathonActive) 
+                        ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5 pointer-events-none' 
+                        : 'bg-hh-pink hover:bg-hh-yellow hover:text-black text-white shadow-hh-pink/25 active:scale-95'
+                      }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    Upload Photo
+                  </label>
+                </>
+              )}
             </div>
           </>
         ) : (
