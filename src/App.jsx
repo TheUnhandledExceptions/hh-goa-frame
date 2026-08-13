@@ -185,14 +185,14 @@ function App() {
         
         // 1. Draw circular clipping path
         ctx.beginPath();
-        ctx.arc(540, 540, 460, 0, 2 * Math.PI);
+        ctx.arc(540, 540, 485, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.clip();
 
         // 2. Draw user image scaled by crop
-        const destSize = 460 * 2;
-        const destX = 540 - 460;
-        const destY = 540 - 460;
+        const destSize = 485 * 2;
+        const destX = 540 - 485;
+        const destY = 540 - 485;
         
         ctx.drawImage(
           userImage,
@@ -267,11 +267,11 @@ function App() {
         // Fallback: draw user image without frame
         ctx.save();
         ctx.beginPath();
-        ctx.arc(540, 540, 460, 0, 2 * Math.PI);
+        ctx.arc(540, 540, 485, 0, 2 * Math.PI);
         ctx.closePath();
         ctx.clip();
-        const destSize = 460 * 2;
-        ctx.drawImage(userImage, croppedAreaPixels.x, croppedAreaPixels.y, croppedAreaPixels.width, croppedAreaPixels.height, 540 - 460, 540 - 460, destSize, destSize);
+        const destSize = 485 * 2;
+        ctx.drawImage(userImage, croppedAreaPixels.x, croppedAreaPixels.y, croppedAreaPixels.width, croppedAreaPixels.height, 540 - 485, 540 - 485, destSize, destSize);
         ctx.restore();
         canvas.toBlob((blob) => {
           if (blob) setFinalImage(URL.createObjectURL(blob));
@@ -486,7 +486,6 @@ function App() {
               <input 
                 type="file" 
                 accept="image/*,.heic,.heif" 
-                capture="environment" 
                 className="hidden" 
                 ref={fileInputRef}
                 onChange={handleFileChange}
