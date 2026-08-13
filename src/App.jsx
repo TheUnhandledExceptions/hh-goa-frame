@@ -312,6 +312,10 @@ function App() {
   };
 
   const handleShare = async () => {
+    // 1. OPEN BLANK WINDOW INSTANTLY TO BYPASS POPUP BLOCKER
+    const twitterWindow = window.open('', '_blank');
+    if (twitterWindow) twitterWindow.document.write('Loading secure uplink...');
+
     try {
       setIsSharing(true);
       addLog('[UPLINK] Initiating secure transmission...');
@@ -339,9 +343,17 @@ function App() {
       const text = "Just built my HH Goa 2026 badge! #FrameInGoa";
       
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(ourShareLink)}`;
-      window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+      
+      // 2. REDIRECT THE ALREADY-OPENED WINDOW
+      if (twitterWindow) {
+        twitterWindow.location.href = twitterUrl;
+      } else {
+        // Fallback if popup blocker still caught it
+        window.location.href = twitterUrl; 
+      }
       
     } catch (error) {
+      if (twitterWindow) twitterWindow.close();
       console.error("Share error:", error);
       alert("Failed to upload image. Please try again.");
     } finally {
