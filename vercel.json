@@ -1,12 +1,12 @@
 {
-  "crons": [
-    {
-      "path": "/api/ping",
-      "schedule": "*/5 * * * *"
-    }
-  ],
   "rewrites": [
-    { "source": "/r/:id", "destination": "/api/r?id=:id" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/r/:id",
+      "destination": "/api/r?id=:id"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
