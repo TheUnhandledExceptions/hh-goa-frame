@@ -19,6 +19,7 @@ We didn't just build a crop tool; we built a high-performance rendering engine o
 - **Zero-DOM-Reflow Canvas Text Engine**: Instead of janky HTML-to-Canvas libraries, we used `@chenglou/pretext`—a pure math text-measuring engine—to perfectly word-wrap and layout the Builder ID text directly onto the HTML5 Canvas context.
 - **Automated Anti-Cold Starts**: Integrated a Vercel Cron Job (`vercel.json`) that pings an Edge Runtime endpoint every 5 minutes to ensure social-share APIs remain persistently warm.
 - **Nexus Command Center**: A fully secure, password-protected Admin Dashboard (`/admin`) sporting a cyberpunk aesthetic. Features live Redis usage tracking and an edge-synchronized **Kill Switch** to remotely disable the submission portal when the hackathon ends.
+- **Standalone Go-Lang Core Export**: Packaged our core rendering pipeline inside a native, dependency-free Go web server (`/export/main.go`). Organizers can self-host this blazing-fast engine, dynamically swap frames in `/public`, and seamlessly connect their own database cluster using `DB_CONNECTION_STRING` and `DB_TYPE` environment variables. This entire architectural blueprint is exposed via our interactive **[ ? SYSTEM BRIEF / FIELD MANUAL ]** dashboard on the frontend, featuring a one-click `.ZIP` download of the system (`export.zip`).
 
 ## Local Setup Instructions
 
