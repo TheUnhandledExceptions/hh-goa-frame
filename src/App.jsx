@@ -87,58 +87,69 @@ function App() {
 
       const userImage = await createImage(imageSrc);
       
-      // Load frame (make sure to catch errors if it doesn't exist yet)
-      let frameImage;
-      try {
-        frameImage = await createImage('/frame-2-fixed.svg');
-      } catch (e) {
-        console.warn("Could not load /frame-2-fixed.svg. Proceeding without it.");
-      }
+      const frameImage = new Image();
+      frameImage.onload = () => {
+        ctx.save();
+        
+        // 1. Draw circular clipping path
+        ctx.beginPath();
+        ctx.arc(540, 540, 380, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.clip();
 
-      ctx.save();
-      
-      // 1. Draw circular clipping path
-      ctx.beginPath();
-      ctx.arc(540, 540, 380, 0, 2 * Math.PI);
-      ctx.closePath();
-      ctx.clip();
+        // 2. Draw user image scaled by crop
+        const destSize = 380 * 2;
+        const destX = 540 - 380;
+        const destY = 540 - 380;
+        
+        ctx.drawImage(
+          userImage,
+          croppedAreaPixels.x,
+          croppedAreaPixels.y,
+          croppedAreaPixels.width,
+          croppedAreaPixels.height,
+          destX,
+          destY,
+          destSize,
+          destSize
+        );
 
-      // 2. Draw user image scaled by crop
-      // Maps the cropped area from the original image to the 760x760 bounding box of the circle
-      const destSize = 380 * 2;
-      const destX = 540 - 380;
-      const destY = 540 - 380;
-      
-      ctx.drawImage(
-        userImage,
-        croppedAreaPixels.x,
-        croppedAreaPixels.y,
-        croppedAreaPixels.width,
-        croppedAreaPixels.height,
-        destX,
-        destY,
-        destSize,
-        destSize
-      );
+        ctx.restore();
 
-      ctx.restore();
-
-      // 3. Draw frame over the canvas if it was loaded successfully
-      if (frameImage) {
+        // 3. Draw frame over the canvas
         ctx.drawImage(frameImage, 0, 0, 1080, 1080);
-      }
 
-      // 4. Export as PNG Blob
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          console.error('Canvas generation failed');
+        // 4. Export as PNG Blob
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            console.error('Canvas generation failed');
+            setIsGenerating(false);
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          setFinalImage(url);
           setIsGenerating(false);
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        setFinalImage(url);
-        setIsGenerating(false);
-      }, 'image/png');
+        }, 'image/png');
+      };
+      
+      frameImage.onerror = () => {
+        console.error("Failed to load /frame-2-fixed.svg");
+        // Fallback: draw user image without frame
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(540, 540, 380, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.clip();
+        const destSize = 380 * 2;
+        ctx.drawImage(userImage, croppedAreaPixels.x, croppedAreaPixels.y, croppedAreaPixels.width, croppedAreaPixels.height, 540 - 380, 540 - 380, destSize, destSize);
+        ctx.restore();
+        canvas.toBlob((blob) => {
+          if (blob) setFinalImage(URL.createObjectURL(blob));
+          setIsGenerating(false);
+        }, 'image/png');
+      };
+
+      frameImage.src = '/frame-2-fixed.svg';
 
     } catch (e) {
       console.error("Error generating result:", e);
