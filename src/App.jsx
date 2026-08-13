@@ -1,7 +1,9 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import heic2any from 'heic2any';
 import Cropper from 'react-easy-crop';
 import imageCompression from 'browser-image-compression';
+import { FaceDetector, FilesetResolver } from '@mediapipe/tasks-vision';
+import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext';
 
 const createImage = (url) =>
   new Promise((resolve, reject) => {
@@ -12,6 +14,27 @@ const createImage = (url) =>
     image.src = url;
   });
 
+let faceDetectorInstance = null;
+const initFaceDetector = async () => {
+  if (faceDetectorInstance) return faceDetectorInstance;
+  try {
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    );
+    faceDetectorInstance = await FaceDetector.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+        delegate: "GPU"
+      },
+      runningMode: "IMAGE"
+    });
+    return faceDetectorInstance;
+  } catch (error) {
+    console.error("Failed to initialize FaceDetector:", error);
+    return null;
+  }
+};
+
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [imageSrc, setImageSrc] = useState(null);
@@ -20,6 +43,25 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [finalImage, setFinalImage] = useState(null);
+  
+  // Format B states
+  const [format, setFormat] = useState('A');
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('');
+  
+  // Hackathon Status
+  const [isHackathonActive, setIsHackathonActive] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.isHackathonActive !== undefined) {
+          setIsHackathonActive(data.isHackathonActive);
+        }
+      })
+      .catch(err => console.error('Failed to fetch status:', err));
+  }, []);
   
   // Cropper states
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -77,6 +119,39 @@ function App() {
       const normalizedFile = await normalizeUpload(file);
       if (normalizedFile) {
         const url = URL.createObjectURL(normalizedFile);
+        
+        // Face detection auto-crop
+        setUploadStatus('AI Face Detection...');
+        try {
+          const detector = await initFaceDetector();
+          if (detector) {
+            const imageElement = await createImage(url);
+            const detections = detector.detect(imageElement);
+            
+            if (detections.detections && detections.detections.length > 0) {
+              const face = detections.detections[0].boundingBox;
+              const faceCenterX = face.originX + face.width / 2;
+              const faceCenterY = face.originY + face.height / 2;
+              
+              const imageWidth = imageElement.width;
+              const imageHeight = imageElement.height;
+              
+              const cropX = imageWidth / 2 - faceCenterX;
+              const cropY = imageHeight / 2 - faceCenterY;
+              
+              setCrop({ x: cropX, y: cropY });
+              setZoom(1.5);
+            } else {
+              setCrop({ x: 0, y: 0 });
+              setZoom(1);
+            }
+          }
+        } catch (error) {
+          console.error("Error during face detection:", error);
+          setCrop({ x: 0, y: 0 });
+          setZoom(1);
+        }
+        
         setImageSrc(url);
       }
       
@@ -135,6 +210,44 @@ function App() {
 
         // 3. Draw frame over the canvas
         ctx.drawImage(frameImage, 0, 0, 1080, 1080);
+
+        // Optional Format B text rendering
+        if (format === 'B') {
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+
+          // Draw Name
+          let nameYEnd = 800;
+          if (name) {
+            const nameFont = 'bold 64px sans-serif';
+            ctx.font = nameFont;
+            ctx.fillStyle = '#FFFFFF';
+            const nameHandle = prepareWithSegments(name, nameFont);
+            const nameResult = layoutWithLines(nameHandle, 600, 72);
+            let currentY = 800;
+            
+            nameResult.lines.forEach(line => {
+              ctx.fillText(line.text, 540, currentY);
+              currentY += 72;
+            });
+            nameYEnd = currentY;
+          }
+
+          // Draw Role
+          if (role) {
+            const roleFont = '40px sans-serif';
+            ctx.font = roleFont;
+            ctx.fillStyle = '#A855F7'; // Tailwind purple-500
+            const roleHandle = prepareWithSegments(role, roleFont);
+            const roleResult = layoutWithLines(roleHandle, 600, 48);
+            let currentY = nameYEnd + 10;
+            
+            roleResult.lines.forEach(line => {
+              ctx.fillText(line.text, 540, currentY);
+              currentY += 48;
+            });
+          }
+        }
 
         // 4. Export as PNG Blob
         canvas.toBlob((blob) => {
@@ -237,21 +350,21 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6 text-white overflow-hidden relative">
+    <div className="min-h-screen bg-hh-green flex flex-col items-center justify-center p-6 text-white overflow-hidden relative">
       {/* Background decoration */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-hh-pink/20 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-hh-yellow/20 rounded-full blur-[100px] pointer-events-none"></div>
 
       <main className="w-full max-w-md z-10 relative h-full flex flex-col justify-center">
         {finalImage ? (
           // --- FINAL IMAGE UI ---
-          <div className="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col items-center w-full">
+          <div className="bg-black/20 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col items-center w-full">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 tracking-tight">Your Frame</h2>
-              <p className="text-gray-400 text-sm mt-2">Looking good! Save it below.</p>
+              <h2 className="text-3xl font-extrabold text-hh-yellow tracking-tight">Your Frame</h2>
+              <p className="text-white/80 text-sm mt-2">Looking good! Save it below.</p>
             </div>
 
-            <div className="w-full max-w-[320px] aspect-square rounded-2xl overflow-hidden mb-8 shadow-2xl shadow-purple-500/20 ring-1 ring-white/20">
+            <div className="w-full max-w-[320px] aspect-square rounded-2xl overflow-hidden mb-8 shadow-2xl shadow-hh-pink/20 ring-1 ring-white/20">
               <img src={finalImage} alt="Final Framed Result" className="w-full h-full object-contain" />
             </div>
 
@@ -259,7 +372,7 @@ function App() {
               <a 
                 href={finalImage}
                 download="hh-goa-2026.png"
-                className="w-full min-h-[56px] py-3 px-6 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold shadow-lg shadow-blue-500/25 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2"
+                className="w-full min-h-[56px] py-3 px-6 rounded-2xl bg-hh-pink hover:bg-hh-yellow hover:text-black text-white font-bold shadow-lg shadow-hh-pink/25 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -274,8 +387,8 @@ function App() {
                 disabled={isSharing}
                 className={`w-full min-h-[56px] py-3 px-6 rounded-2xl border border-white/20 font-bold shadow-lg transition-all duration-300 flex items-center justify-center gap-2 ${
                   isSharing 
-                    ? 'bg-gray-800 text-gray-400 cursor-not-allowed' 
-                    : 'bg-[#000000] hover:bg-gray-900 text-white active:scale-95'
+                    ? 'bg-black/50 text-white/50 cursor-not-allowed' 
+                    : 'bg-black hover:bg-white/10 text-white active:scale-95'
                 }`}
               >
                 {isSharing ? (
@@ -293,7 +406,7 @@ function App() {
 
               <button 
                 onClick={handleStartOver}
-                className="w-full min-h-[56px] py-3 px-6 rounded-2xl border border-white/10 hover:bg-white/5 text-gray-300 font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
+                className="w-full min-h-[56px] py-3 px-6 rounded-2xl border border-white/20 hover:bg-white/10 text-white font-semibold transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -307,17 +420,32 @@ function App() {
           // --- UPLOAD UI ---
           <>
             <div className="text-center mb-10">
-              <h1 className="text-4xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-hh-yellow">
                 Frame Generator
               </h1>
-              <p className="text-gray-400 text-lg">Upload your photo to get started</p>
+              <p className="text-white/80 text-lg">Upload your photo to get started</p>
             </div>
 
             <div 
-              className="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:border-white/20 hover:shadow-purple-500/10 flex flex-col items-center"
+              className="bg-black/20 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:border-white/30 hover:shadow-hh-pink/10 flex flex-col items-center"
             >
-              <div className="w-32 h-32 mb-6 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 p-[2px] overflow-hidden">
-                <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="flex bg-black/40 p-1 rounded-xl mb-8 w-full max-w-[250px]">
+                <button 
+                  onClick={() => setFormat('A')}
+                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${format === 'A' ? 'bg-hh-pink text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                >
+                  Format A (PFP)
+                </button>
+                <button 
+                  onClick={() => setFormat('B')}
+                  className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${format === 'B' ? 'bg-hh-pink text-white shadow-md' : 'text-white/60 hover:text-white'}`}
+                >
+                  Format B (ID)
+                </button>
+              </div>
+
+              <div className="w-32 h-32 mb-6 rounded-full bg-hh-pink p-[2px] overflow-hidden">
+                <div className="w-full h-full bg-hh-green rounded-full flex items-center justify-center overflow-hidden">
                   <svg 
                     xmlns="http://www.w3.org/2000/svg" 
                     width="32" 
@@ -328,7 +456,7 @@ function App() {
                     strokeWidth="2" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
-                    className="text-gray-300"
+                    className="text-white/80"
                   >
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="17 8 12 3 7 8"/>
@@ -337,14 +465,18 @@ function App() {
                 </div>
               </div>
 
-              <div className="text-center text-gray-300 mb-8 max-w-[250px] min-h-[48px] flex items-center justify-center">
+              <div className="text-center text-white/80 mb-8 max-w-[250px] min-h-[48px] flex items-center justify-center">
                 {isProcessing ? (
                   <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-5 w-5 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-hh-yellow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     {uploadStatus || 'Processing image...'}
+                  </span>
+                ) : !isHackathonActive ? (
+                  <span className="text-hh-pink font-bold text-sm bg-black/40 px-4 py-2 rounded-lg border border-hh-pink/30">
+                    The hackathon submission period has ended.
                   </span>
                 ) : (
                   "Choose a photo from your gallery or take a new one"
@@ -358,16 +490,16 @@ function App() {
                 className="hidden" 
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                disabled={isProcessing}
+                disabled={isProcessing || !isHackathonActive}
               />
 
               <button 
                 onClick={handleUploadClick}
-                disabled={isProcessing}
+                disabled={isProcessing || !isHackathonActive}
                 className={`w-full py-4 px-6 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all duration-300
-                  ${isProcessing 
-                    ? 'bg-gray-800 text-gray-400 cursor-not-allowed border border-white/5' 
-                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-blue-500/25 active:scale-95'
+                  ${(isProcessing || !isHackathonActive) 
+                    ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5' 
+                    : 'bg-hh-pink hover:bg-hh-yellow hover:text-black text-white shadow-hh-pink/25 active:scale-95'
                   }`}
               >
                 <svg 
@@ -391,13 +523,32 @@ function App() {
           </>
         ) : (
           // --- CROPPER UI ---
-          <div className="bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col w-full">
+          <div className="bg-black/20 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col w-full">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Adjust Photo</h2>
-              <p className="text-gray-400 text-sm mt-1">Drag to reposition, pinch to zoom</p>
+              <h2 className="text-2xl font-bold text-hh-yellow tracking-tight">Adjust Photo</h2>
+              <p className="text-white/80 text-sm mt-1">Drag to reposition, pinch to zoom</p>
             </div>
 
-            <div className="relative w-full h-[400px] bg-black/50 rounded-2xl overflow-hidden mb-6">
+            {format === 'B' && (
+              <div className="mb-6 flex flex-col gap-3 w-full">
+                <input 
+                  type="text" 
+                  placeholder="Your Name" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-hh-yellow"
+                />
+                <input 
+                  type="text" 
+                  placeholder="Your Role" 
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-hh-pink"
+                />
+              </div>
+            )}
+
+            <div className="relative w-full h-[400px] bg-black/50 rounded-2xl overflow-hidden mb-6 border border-white/10">
               <Cropper
                 image={imageSrc}
                 crop={crop}
@@ -412,7 +563,7 @@ function App() {
             </div>
 
             <div className="mb-8 px-4 flex items-center gap-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/80">
                 <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line>
               </svg>
               <input
@@ -423,7 +574,7 @@ function App() {
                 step={0.1}
                 aria-label="Zoom"
                 onChange={(e) => setZoom(e.target.value)}
-                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                className="w-full h-2 bg-black/50 rounded-lg appearance-none cursor-pointer accent-hh-yellow"
               />
             </div>
 
@@ -431,7 +582,7 @@ function App() {
               <button 
                 onClick={handleCancelCrop}
                 disabled={isGenerating}
-                className="flex-1 py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 text-gray-300 font-semibold transition-colors duration-200 disabled:opacity-50"
+                className="flex-1 py-3 px-4 rounded-xl border border-white/20 hover:bg-white/10 text-white font-semibold transition-colors duration-200 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -440,8 +591,8 @@ function App() {
                 disabled={isGenerating}
                 className={`flex-1 py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 ${
                   isGenerating 
-                    ? 'bg-gray-800 text-gray-400 cursor-not-allowed border border-white/5' 
-                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-blue-500/25 active:scale-95'
+                    ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5' 
+                    : 'bg-hh-pink hover:bg-hh-yellow hover:text-black text-white shadow-lg shadow-hh-pink/25 active:scale-95'
                 }`}
               >
                 {isGenerating ? (

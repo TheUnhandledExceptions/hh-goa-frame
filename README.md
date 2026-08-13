@@ -1,16 +1,43 @@
-# React + Vite
+# HH Goa 2026 - Frame & ID Card Generator
+**Team: TheUnhandledExceptions**
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+![Hacker House Goa 2026](https://hackathons.com/hh-goa-2026-badge.png) <!-- Placeholder image -->
 
-Currently, two official plugins are available:
+## Overview
+A blazing-fast, single-page application built to instantly generate branded event graphics and ID Cards for **Hacker House Goa 2026**. Designed with a premium, hacker-themed glassmorphism aesthetic mirroring the official brand poster, this tool allows builders to crop their photos, select their format, and instantly share their seat at the beach to X/Twitter.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
+- **Frontend Framework**: React + Vite
+- **Styling Engine**: Tailwind CSS
+- **Deployment & Serverless**: Vercel (Edge Functions & Node.js Serverless)
+- **Data & Storage**: Vercel Blob (Image hosting), Vercel KV / Redis (Analytics & Kill Switch)
 
-## React Compiler
+## Next-Level Features (The Flex)
+We didn't just build a crop tool; we built a high-performance rendering engine on the edge.
+- **Client-Side AI Face Centering**: Integrated `@mediapipe/tasks-vision` via WebAssembly to automatically detect faces and center the crop viewport instantly without a server roundtrip.
+- **Pre-Cropper Image Compression**: Leveraged `browser-image-compression` via Web Workers to compress heavy 4K/HEIC mobile photos down to <1MB before they ever hit the canvas, preventing mobile Safari crashes.
+- **Zero-DOM-Reflow Canvas Text Engine**: Instead of janky HTML-to-Canvas libraries, we used `@chenglou/pretext`—a pure math text-measuring engine—to perfectly word-wrap and layout the Builder ID text directly onto the HTML5 Canvas context.
+- **Automated Anti-Cold Starts**: Integrated a Vercel Cron Job (`vercel.json`) that pings an Edge Runtime endpoint every 5 minutes to ensure social-share APIs remain persistently warm.
+- **Nexus Command Center**: A fully secure, password-protected Admin Dashboard (`/admin`) sporting a cyberpunk aesthetic. Features live Redis usage tracking and an edge-synchronized **Kill Switch** to remotely disable the submission portal when the hackathon ends.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Local Setup Instructions
 
-## Expanding the Oxlint configuration
+1. **Clone and Install**
+   ```bash
+   git clone https://github.com/your-username/hh-goa-frame.git
+   cd hh-goa-frame
+   npm install
+   ```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+2. **Environment Variables**
+   Duplicate the `.env.example` file and rename it to `.env.local`. Fill in the secure tokens:
+   ```bash
+   cp .env.example .env.local
+   ```
+   *Note: You will need a Redis URL and a Vercel Blob token to run the analytics and sharing backend locally.*
+
+3. **Run the Development Server**
+   ```bash
+   npm run dev
+   ```
+   Navigate to `http://localhost:5173` to see the generator, and `http://localhost:5173/admin` for the Nexus Command Center.

@@ -10,9 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chenglou/pretext": "^0.0.8",
+    "@mediapipe/tasks-vision": "^1.0.1",
     "@vercel/blob": "^2.8.0",
     "browser-image-compression": "^2.0.2",
     "heic2any": "^0.0.4",
+    "ioredis": "^6.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-easy-crop": "^6.2.3"
