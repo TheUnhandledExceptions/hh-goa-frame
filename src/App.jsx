@@ -49,6 +49,14 @@ function App() {
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   
+  // Console state
+  const [logs, setLogs] = useState([]);
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+
+  const addLog = (msg) => {
+    setLogs(prev => [...prev, `[${new Date().toLocaleTimeString('en-US', { hour12: false })}] ${msg}`].slice(-10));
+  };
+  
   // Hackathon Status
   const [isHackathonActive, setIsHackathonActive] = useState(true);
 
@@ -115,13 +123,16 @@ function App() {
       setSelectedFile(file);
       setIsProcessing(true);
       setUploadStatus('Processing image...');
+      addLog('[SYS] Reading raw file data...');
       
       const normalizedFile = await normalizeUpload(file);
       if (normalizedFile) {
+        addLog('[SYS] Normalizing HEIC/image asset...');
         const url = URL.createObjectURL(normalizedFile);
         
         // Face detection auto-crop
         setUploadStatus('AI Face Detection...');
+        addLog('[AI] Initializing MediaPipe FaceDetector...');
         try {
           const detector = await initFaceDetector();
           if (detector) {
@@ -171,6 +182,7 @@ function App() {
   const generateResult = async () => {
     try {
       setIsGenerating(true);
+      addLog('[NEXUS] Initializing rendering engine...');
       
       const canvas = document.createElement('canvas');
       canvas.width = 1080;
@@ -181,6 +193,7 @@ function App() {
       
       const frameImage = new Image();
       frameImage.onload = () => {
+        addLog('[NEXUS] Merging raster layers at 300 DPI...');
         ctx.save();
         
         // 1. Draw circular clipping path
@@ -256,6 +269,7 @@ function App() {
             setIsGenerating(false);
             return;
           }
+          addLog('[SUCCESS] Output compiled to memory.');
           const url = URL.createObjectURL(blob);
           setFinalImage(url);
           setIsGenerating(false);
@@ -294,6 +308,7 @@ function App() {
   const handleShare = async () => {
     try {
       setIsSharing(true);
+      addLog('[UPLINK] Initiating secure transmission...');
       
       const response = await fetch(finalImage);
       const blob = await response.blob();
@@ -311,6 +326,7 @@ function App() {
       }
       
       const data = await uploadRes.json();
+      addLog('[SUCCESS] Transmission complete. Blob synced.');
       const uploadedUrl = data.url;
       
       const ourShareLink = `${window.location.origin}/api/share?imgUrl=${encodeURIComponent(uploadedUrl)}`;
@@ -485,7 +501,7 @@ function App() {
 
               <input 
                 type="file" 
-                accept="image/*,.heic,.heif" 
+                accept="image/*" 
                 className="hidden" 
                 ref={fileInputRef}
                 onChange={handleFileChange}
@@ -537,13 +553,24 @@ function App() {
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-hh-yellow"
                 />
-                <input 
-                  type="text" 
-                  placeholder="Your Role" 
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-hh-pink"
-                />
+                <div className="flex gap-2 w-full">
+                  <input 
+                    type="text" 
+                    placeholder="Your Role" 
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="flex-1 bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-hh-pink"
+                  />
+                  <button 
+                    onClick={() => {
+                      const roles = ['Spaghetti Code Architect', 'CSS Whisperer', 'Git Force-Pusher', 'YAML Wrangler', 'API Alchemist'];
+                      setRole(roles[Math.floor(Math.random() * roles.length)]);
+                    }}
+                    className="bg-hh-pink hover:bg-hh-yellow hover:text-black text-white px-4 rounded-xl font-bold transition-colors text-sm whitespace-nowrap"
+                  >
+                    Random
+                  </button>
+                </div>
               </div>
             )}
 
@@ -610,6 +637,31 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* System Console */}
+      <div className="z-10 mt-6 w-full max-w-md font-mono text-xs">
+        <button 
+          onClick={() => setIsConsoleOpen(!isConsoleOpen)}
+          className="w-full flex items-center justify-between text-hh-yellow/60 hover:text-hh-yellow transition-colors border-t border-white/10 pt-4 focus:outline-none"
+        >
+          <span>&gt; System Console [SYS_OK]</span>
+          <span>{isConsoleOpen ? '[-]' : '[+]'}</span>
+        </button>
+        
+        {isConsoleOpen && (
+          <div className="mt-2 bg-black/80 border border-white/10 rounded-lg p-3 max-h-32 overflow-y-auto w-full shadow-2xl">
+            {logs.length === 0 ? (
+              <div className="text-white/40 italic">Awaiting instructions...</div>
+            ) : (
+              logs.map((log, i) => (
+                <div key={i} className="text-hh-yellow/80 break-words mb-1 last:mb-0">
+                  {log}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
