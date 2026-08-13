@@ -77,8 +77,6 @@ function App() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  const fileInputRef = useRef(null);
-
   const normalizeUpload = async (file) => {
     if (!file) return null;
     
@@ -170,10 +168,6 @@ function App() {
       setIsProcessing(false);
       setUploadStatus('');
     }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current.click();
   };
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
@@ -350,9 +344,6 @@ function App() {
     setSelectedFile(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   const handleStartOver = () => {
@@ -361,9 +352,6 @@ function App() {
     setSelectedFile(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   return (
@@ -509,20 +497,19 @@ function App() {
               </div>
 
               <input 
+                id="native-upload"
                 type="file" 
                 accept="image/*" 
                 className="hidden" 
-                ref={fileInputRef}
                 onChange={handleFileChange}
                 disabled={isProcessing || !isHackathonActive}
               />
 
-              <button 
-                onClick={handleUploadClick}
-                disabled={isProcessing || !isHackathonActive}
-                className={`w-full py-4 px-6 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all duration-300
+              <label 
+                htmlFor="native-upload"
+                className={`w-full py-4 px-6 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer
                   ${(isProcessing || !isHackathonActive) 
-                    ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5' 
+                    ? 'bg-black/50 text-white/50 cursor-not-allowed border border-white/5 pointer-events-none' 
                     : 'bg-hh-pink hover:bg-hh-yellow hover:text-black text-white shadow-hh-pink/25 active:scale-95'
                   }`}
               >
@@ -542,7 +529,7 @@ function App() {
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
                 Upload Photo
-              </button>
+              </label>
             </div>
           </>
         ) : (
