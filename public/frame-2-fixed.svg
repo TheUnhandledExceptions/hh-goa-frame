@@ -1,0 +1,64 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="donut2">
+      <rect width="1080" height="1080" fill="white"/>
+      <circle cx="540" cy="540" r="360" fill="black"/>
+    </mask>
+  </defs>
+
+  <g mask="url(#donut2)">
+    <!-- black backing -->
+    <rect width="1080" height="1080" fill="#0D0D0D"/>
+
+    <!-- scalloped ring built from repeated circles -->
+    <g id="scallops">
+      <!-- 24 bumps around radius 480 -->
+      <circle cx="540" cy="60"  r="70" fill="#F5C518"/>
+      <circle cx="720" cy="80"  r="70" fill="#EC1E79"/>
+      <circle cx="880" cy="150" r="70" fill="#F5C518"/>
+      <circle cx="1000" cy="270" r="70" fill="#EC1E79"/>
+      <circle cx="1050" cy="440" r="70" fill="#F5C518"/>
+      <circle cx="1050" cy="630" r="70" fill="#EC1E79"/>
+      <circle cx="1000" cy="800" r="70" fill="#F5C518"/>
+      <circle cx="880" cy="920" r="70" fill="#EC1E79"/>
+      <circle cx="720" cy="1000" r="70" fill="#F5C518"/>
+      <circle cx="540" cy="1030" r="70" fill="#EC1E79"/>
+      <circle cx="360" cy="1000" r="70" fill="#F5C518"/>
+      <circle cx="200" cy="920" r="70" fill="#EC1E79"/>
+      <circle cx="80" cy="800" r="70" fill="#F5C518"/>
+      <circle cx="30" cy="630" r="70" fill="#EC1E79"/>
+      <circle cx="30" cy="440" r="70" fill="#F5C518"/>
+      <circle cx="80" cy="270" r="70" fill="#EC1E79"/>
+      <circle cx="200" cy="150" r="70" fill="#F5C518"/>
+      <circle cx="360" cy="80" r="70" fill="#EC1E79"/>
+    </g>
+
+    <!-- inner green ring -->
+    <circle cx="540" cy="540" r="470" fill="none" stroke="#123A2C" stroke-width="60"/>
+    <circle cx="540" cy="540" r="440" fill="none" stroke="#F5C518" stroke-width="6"/>
+
+    <!-- corner starbursts -->
+    <g fill="#F5C518" opacity="0.9">
+      <path d="M120 120 l16 40 l40 16 l-40 16 l-16 40 l-16 -40 l-40 -16 l40 -16 Z"/>
+      <path d="M960 120 l16 40 l40 16 l-40 16 l-16 40 l-16 -40 l-40 -16 l40 -16 Z"/>
+      <path d="M120 960 l16 40 l40 16 l-40 16 l-16 40 l-16 -40 l-40 -16 l40 -16 Z"/>
+      <path d="M960 960 l16 40 l40 16 l-40 16 l-16 40 l-16 -40 l-40 -16 l40 -16 Z"/>
+    </g>
+
+    <!-- centered title on the upper frame band -->
+    <text x="540" y="94" font-family="'Trebuchet MS', sans-serif" font-size="36" font-weight="900"
+          fill="#FDF6E3" text-anchor="middle" letter-spacing="4">HH GOA 2026</text>
+
+    <!-- diagonal ribbon banner bottom-left -->
+    <g transform="translate(210,900) rotate(-18)">
+      <rect x="-140" y="-40" width="260" height="72" fill="#EC1E79"/>
+      <text x="0" y="14" font-family="'Trebuchet MS', sans-serif" font-size="34" font-weight="900" fill="#FDF6E3" text-anchor="middle" letter-spacing="2">BUILDER</text>
+    </g>
+
+    <!-- hashtag bottom right -->
+    <g transform="translate(850,900) rotate(6)">
+      <rect x="-140" y="-36" width="280" height="72" rx="36" fill="#F5C518"/>
+      <text x="0" y="12" font-family="Verdana, sans-serif" font-size="26" font-weight="800" fill="#0D0D0D" text-anchor="middle">#FrameInGoa</text>
+    </g>
+  </g>
+</svg>
