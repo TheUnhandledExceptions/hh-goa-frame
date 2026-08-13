@@ -349,6 +349,34 @@ function App() {
     }
   };
 
+  const handleUniversalShare = async () => {
+    try {
+      addLog('[SYS] Accessing native OS share protocols...');
+      const response = await fetch(finalImage);
+      const blob = await response.blob();
+      const file = new File([blob], 'hh-goa-2026.png', { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'Hacker House Goa 2026',
+          text: 'Just built my HH Goa 2026 badge! #FrameInGoa',
+          files: [file]
+        });
+        addLog('[SUCCESS] Native share payload delivered.');
+      } else {
+        addLog('[ERR] Native file share not supported on this browser.');
+        alert('Native sharing is not supported on this browser. Please use the Download button!');
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error("Native share error:", error);
+        addLog('[ERR] Native share interrupted.');
+      } else {
+        addLog('[SYS] Native share dismissed by user.');
+      }
+    }
+  };
+
   const handleCancelCrop = () => {
     // Reset everything to go back to upload UI
     setImageSrc(null);
@@ -426,6 +454,20 @@ function App() {
                   </svg>
                 )}
                 {isSharing ? 'Preparing...' : 'Share to X'}
+              </button>
+
+              <button 
+                onClick={handleUniversalShare}
+                className="w-full min-h-[56px] py-3 px-6 rounded-2xl border-2 border-hh-yellow text-hh-yellow hover:bg-hh-yellow hover:text-black font-bold shadow-lg transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                Share Anywhere
               </button>
 
               <button 
