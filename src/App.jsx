@@ -52,6 +52,7 @@ function App() {
   // Console state
   const [logs, setLogs] = useState([]);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [isBriefOpen, setIsBriefOpen] = useState(false);
 
   const addLog = (msg) => {
     setLogs(prev => [...prev, `[${new Date().toLocaleTimeString('en-US', { hour12: false })}] ${msg}`].slice(-10));
@@ -371,6 +372,14 @@ function App() {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-hh-pink/20 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-hh-yellow/20 rounded-full blur-[100px] pointer-events-none"></div>
 
+      {/* Top Right System Brief Button */}
+      <button 
+        onClick={() => setIsBriefOpen(true)}
+        className="absolute top-6 right-6 z-20 font-mono text-xs text-hh-yellow/80 hover:text-white border border-hh-yellow/40 hover:border-hh-pink bg-black/40 hover:bg-hh-pink/20 px-4 py-2 rounded shadow-[0_0_10px_rgba(255,222,23,0.1)] hover:shadow-[0_0_15px_rgba(249,22,129,0.3)] transition-all duration-300"
+      >
+        [ ? SYSTEM BRIEF / FIELD MANUAL ]
+      </button>
+
       <main className="w-full max-w-md z-10 relative h-full flex flex-col justify-center">
         {finalImage ? (
           // --- FINAL IMAGE UI ---
@@ -662,6 +671,73 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Field Manual Modal */}
+      {isBriefOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-2xl">
+          <div className="w-full max-w-3xl max-h-full overflow-y-auto border border-hh-pink/50 bg-hh-green/50 p-6 md:p-10 rounded-xl shadow-[0_0_40px_rgba(249,22,129,0.2)] font-mono text-white relative scrollbar-hide">
+            <button 
+              onClick={() => setIsBriefOpen(false)}
+              className="absolute top-6 right-6 text-hh-pink hover:text-white text-xl"
+            >
+              [X]
+            </button>
+            
+            <h2 className="text-2xl md:text-3xl font-bold text-hh-yellow mb-6 uppercase tracking-widest border-b border-hh-yellow/30 pb-4">
+              [ CORE_SPECIFICATION_PoC ]
+            </h2>
+            
+            <div className="space-y-6 text-sm md:text-base leading-relaxed text-white/80">
+              <section>
+                <h3 className="text-hh-pink font-bold mb-2 uppercase tracking-wide">&gt; System Overview</h3>
+                <p>
+                  This platform serves as a high-performance Edge Rendering Proof-of-Concept (PoC) designed specifically for the Hacker House Goa 2026 selection trials. By leveraging client-side WebAssembly face-tracking and instant image compositing, we eliminate server round-trip latency and scale infinitely at zero hosting cost.
+                </p>
+              </section>
+              
+              <section>
+                <h3 className="text-hh-pink font-bold mb-3 uppercase tracking-wide">&gt; Protocol Matrix</h3>
+                <ul className="space-y-4">
+                  <li className="flex flex-col md:flex-row gap-2 md:gap-4 border-l-2 border-hh-yellow/50 pl-4 bg-black/20 py-2 pr-2">
+                    <strong className="text-hh-yellow min-w-[200px]">Client-Side Compression:</strong>
+                    <span>Downsamples heavy mobile/HEIC media under Web Workers to prevent memory allocation faults.</span>
+                  </li>
+                  <li className="flex flex-col md:flex-row gap-2 md:gap-4 border-l-2 border-hh-yellow/50 pl-4 bg-black/20 py-2 pr-2">
+                    <strong className="text-hh-yellow min-w-[200px]">Sub-Pixel Alignment:</strong>
+                    <span>Dynamically calculates face coordinates to center crops inside the circular graphic.</span>
+                  </li>
+                  <li className="flex flex-col md:flex-row gap-2 md:gap-4 border-l-2 border-hh-yellow/50 pl-4 bg-black/20 py-2 pr-2">
+                    <strong className="text-hh-yellow min-w-[200px]">Distributed Storage:</strong>
+                    <span>On-demand edge uploads to Vercel Blob paired with dynamic OG-metadata injection for seamless social previews.</span>
+                  </li>
+                </ul>
+              </section>
+              
+              <div className="my-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+              
+              <section className="bg-black/40 border border-white/10 rounded-lg p-6 relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-hh-pink to-hh-yellow opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <h3 className="text-hh-yellow font-bold text-lg mb-2 uppercase tracking-wide">[ STANDALONE SYSTEM EXPORT ]</h3>
+                <p className="mb-6">
+                  The core compilation engine has been wrapped in a lightweight, native Go-lang web server. Organizations can self-host this engine, load custom single/multiple frames, and connect their own database cluster.
+                </p>
+                <a 
+                  href="/export.zip" 
+                  download="hh-goa-standalone-core.zip"
+                  className="inline-flex items-center gap-3 bg-hh-pink hover:bg-hh-yellow text-white hover:text-black font-bold uppercase tracking-widest py-3 px-6 rounded transition-all active:scale-95 shadow-[0_0_15px_rgba(249,22,129,0.3)]"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download Standalone Core (.ZIP)
+                </a>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
