@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# npm cache
+.npm
+
+# testing
+coverage/

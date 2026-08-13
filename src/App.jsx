@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import heic2any from 'heic2any';
 import Cropper from 'react-easy-crop';
+import imageCompression from 'browser-image-compression';
 
 const createImage = (url) =>
   new Promise((resolve, reject) => {
@@ -15,6 +16,7 @@ function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [imageSrc, setImageSrc] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [finalImage, setFinalImage] = useState(null);
@@ -29,12 +31,14 @@ function App() {
   const normalizeUpload = async (file) => {
     if (!file) return null;
     
+    let currentFile = file;
     // Check if HEIC by extension or type
     const isHeic = file.type === 'image/heic' || 
                    file.type === 'image/heif' || 
                    /\.hei[cf]$/i.test(file.name);
     
     if (isHeic) {
+      setUploadStatus('Converting HEIC...');
       try {
         const convertedBlob = await heic2any({
           blob: file,
@@ -42,14 +46,25 @@ function App() {
           quality: 0.8
         });
         // heic2any can return an array of blobs if it's an image sequence
-        return Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        currentFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
       } catch (error) {
         console.error('Error converting HEIC:', error);
-        return file; // Fallback to original file
       }
     }
     
-    return file;
+    setUploadStatus('Compressing...');
+    try {
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1500,
+        useWebWorker: true,
+      };
+      currentFile = await imageCompression(currentFile, options);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+    }
+    
+    return currentFile;
   };
 
   const handleFileChange = async (e) => {
@@ -57,6 +72,7 @@ function App() {
     if (file) {
       setSelectedFile(file);
       setIsProcessing(true);
+      setUploadStatus('Processing image...');
       
       const normalizedFile = await normalizeUpload(file);
       if (normalizedFile) {
@@ -65,6 +81,7 @@ function App() {
       }
       
       setIsProcessing(false);
+      setUploadStatus('');
     }
   };
 
@@ -327,7 +344,7 @@ function App() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Processing image...
+                    {uploadStatus || 'Processing image...'}
                   </span>
                 ) : (
                   "Choose a photo from your gallery or take a new one"
